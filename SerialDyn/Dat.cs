@@ -47,12 +47,12 @@ namespace SerialDyn
 			}
 		public void CreaDati()
 			{
-			//_lpr.Add(new Proprieta(true));
-			//_lpr.Add(new Proprieta(DateTime.Now));
+			_lpr.Add(new Proprieta(true));
+			_lpr.Add(new Proprieta(DateTime.Now));
 			_lpr.Add(new Proprieta(1.234d));
-			//_lpr.Add(new Proprieta(-3.45f));
-			//_lpr.Add(new Proprieta((int)10));
-			//_lpr.Add(new Proprieta("Prova"));
+			_lpr.Add(new Proprieta(-3.45f));
+			_lpr.Add(new Proprieta((int)10));
+			_lpr.Add(new Proprieta("Prova"));
 			}
 
 		public Dat()

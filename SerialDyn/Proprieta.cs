@@ -42,21 +42,21 @@ namespace SerialDyn
 		FLOAT,
 		DOUBLE,
 		DATE,
-		COLOR,				// ARGB
+		//COLOR,			// ARGB
 		None				// Ultimo 
 		}
 
 
 
 	/// <summary>
-	/// Classe Dat: oggetto generico con associato il tipo di dato.
+	/// Classe P: oggetto generico con associato il tipo di dato.
 	/// La classe non è generica, per poter esser contenuta in un unico raccoglitore
 	/// </summary>
-	public class Proprieta
+	public class P
 		{
 				
-		TypeVar _t;					// Tipo di dato
-		object? _obj;				// Oggetto (non è readonly)	
+		TypeVar _t;			// Tipo di dato
+		object _obj;		// Oggetto (non è readonly)	
 
 
 		#region PROPRIETA (per serializzazione)
@@ -84,45 +84,45 @@ namespace SerialDyn
 			return x.GetType();		
 			}
 
-		public Proprieta()
+		/// <summary>
+		/// Ctor vuoto
+		/// </summary>
+		public P()
 			{
 			_t = TypeVar.None;
-			_obj = null;
+			_obj = new Object();
 			}
 		/// <summary>
 		/// Ctor
 		/// </summary>
 		/// <param name="t"></param>
 		/// <param name="_d"></param>
-		public Proprieta(int _d)
+		public P(int _d)
 			{
 			_t = TypeVar.INT;
 			_obj = _d;
 			}
-		public Proprieta(string _d)
+		public P(string _d)
 			{
 			_t = TypeVar.STR;
 			_obj = _d;
 			}
-		public Proprieta(bool _d)
+		public P(bool _d)
 			{
 			_t = TypeVar.BOOL;
 			_obj = _d;
 			}
-
-		public Proprieta(float _d)
+		public P(float _d)
 			{
 			_t = TypeVar.FLOAT;
 			_obj = _d;
 			}
-
-		public Proprieta(double _d)
+		public P(double _d)
 			{
 			_t = TypeVar.DOUBLE;
 			_obj = _d;
 			}
-
-		public Proprieta(DateTime _d)
+		public P(DateTime _d)
 			{
 			_t = TypeVar.DATE;
 			_obj = _d;
@@ -133,7 +133,7 @@ namespace SerialDyn
 		/// Costruttore di copia
 		/// </summary>
 		/// <param name="tpl"></param>
-		public Proprieta(Proprieta tpl)
+		public P(P tpl)
 			{
 			_t = tpl._t;
 			_obj = tpl._obj;
@@ -170,8 +170,7 @@ namespace SerialDyn
 					}
 					//break;
 				case TypeVar.DOUBLE:
-					{
-					
+					{	
 					return (double)_obj;
 					}
 					//break;
@@ -193,7 +192,14 @@ namespace SerialDyn
 		public override string ToString()
 			{
 			StringBuilder sb = new StringBuilder();
-			sb.Append(this._t.ToString() + "=" + this.Get().ToString());
+			try
+				{
+				sb.Append(this._t.ToString() + "=" + this.Get().ToString());
+				}
+			catch
+				{
+				MessageBox.Show($"Errore in ToString()");
+				}
 			return sb.ToString();
 			} 
 
@@ -238,80 +244,179 @@ namespace SerialDyn
 				_obj = _d;
 			else
 				throw new ArgumentException();
-			}
-		
-#if false
-		public static Proprieta Parse(string s)
-			{
-			return new Proprieta(s);
-			}
-#endif
+			}	
+
+		//	ALTERNATIVA (non funzionante)
+		//	public static P Parse(string s)
+		//		{
+		//		var instance = new P();
+		//		instance.Set(100d);					// Prova
+		//		return instance;
+		//		}
 		}
 
-public static class EstensioneX
-	{
-	
-	}
-	
-	//public static class ExtensionParse
-	//	{
-	//	public static Proprieta Parse(this string s)
-	//		{
-	//		return new Proprieta(s);
-	//		}
-	//	}
+	//	-----------
+	//	LEGGERE:
+	//	https://docs.microsoft.com/it-it/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-6-0#registration-sample---converters-collection
+	//
+	//	Meglio eseguire override dei convertitori JSON (versione per tipi base)
+	//	Il formato di salvataggio è personalizzato (qui: TIPO_DATO = valore_in_stringa)
+	//
+	//	-----------
 
-#if false
-	public class ObjJsonConverter : JsonConverter<Proprieta>
+	/// <summary>
+	/// Override del convertitore JSON (versione per tipi base)
+	/// </summary>
+	public class PJsonConverter : JsonConverter<P>
 		{
-        public override Proprieta Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options) =>
-                Proprieta.Parse(reader.GetString()!);
+		public override P Read(
+			ref Utf8JsonReader reader,
+			Type typeToConvert,
+			JsonSerializerOptions options) =>
+				ReadProp(ref reader,typeToConvert)!;
 
-        public override void Write(
+		P? ReadProp(ref Utf8JsonReader reader, Type typeToConvert)
+			{
+			P? p = null;
+			string s = reader.GetString()!;		// Può essere nullo
+			MessageBox.Show(s);
+			string[] ps = s.Split('=',2);
+
+			switch(ps[0])
+				{
+				case nameof(TypeVar.DOUBLE):
+					{
+					double x;
+					if(double.TryParse(ps[1],out x))
+						p = new P(x);
+					}
+					break;
+				case nameof(TypeVar.INT):
+					{
+					int x;
+					if(int.TryParse(ps[1],out x))
+						p = new P(x);	
+					}
+					break;
+				case nameof(TypeVar.FLOAT):
+					{
+					float x;
+					if(float.TryParse(ps[1],out x))
+						p = new P(x);	
+					}
+					break;
+				case nameof(TypeVar.BOOL):
+					{
+					bool x;
+					if(bool.TryParse(ps[1],out x))
+						p = new P(x);	
+					}
+					break;
+				case nameof(TypeVar.STR):
+					{
+					string x = ps[1];
+					p = new P(x);	
+					}
+					break;
+				case nameof(TypeVar.DATE):
+					{
+					DateTime x;
+					if(DateTime.TryParse(ps[1],out x))
+						p = new P(x);	
+					}
+					break;
+				default:
+					throw new JsonException("Tipo dati non gestito");
+
+				}
+			return p;
+			}
+
+		public override void Write(
             Utf8JsonWriter writer,
-            Proprieta pValue,
+            P pValue,
             JsonSerializerOptions options) =>
-                writer.WriteStringValue(pValue.ToString());
+                WriteProp(writer, pValue);
+
+		 void WriteProp(Utf8JsonWriter writer,  P pValue)
+			{
+			writer.WriteStringValue(pValue.ToString().AsSpan());
+			}
 		}
-#endif
+	
+
+	/// <summary>
+	/// Proprietà completa
+	/// Si ingloba la classe P all'interno di proprietà, usando il convertitore base.
+	/// Per i dati si usa List<Proprietà>.
+	/// Proprietà (che contiene P) viene serializzato con la funzione di base
+	/// List<P> richiederebbe invece un convertitore più complesso.
+	/// </summary>
+	public class Proprieta
+		{	
+		P _p;
+
+		[JsonConverter(typeof(PJsonConverter))]
+		public P P
+			{
+			get {return _p;}
+			set {_p = value;}
+			}
+
+		/// <summary>
+		/// Ctor vuoto
+		/// </summary>
+		public Proprieta()
+			{
+			_p = new P();
+			}
+		/// <summary>
+		/// Ctor con proprietà P
+		/// </summary>
+		/// <param name="p"></param>
+		public Proprieta(P p)
+			{
+			_p = p;
+			}
+
+		public Proprieta(int v)
+			{
+			_p = new P(v);
+			}
+		public Proprieta(bool v)
+			{
+			_p = new P(v);
+			}
+		public Proprieta(float v)
+			{
+			_p = new P(v);
+			}
+		public Proprieta(double v)
+			{
+			_p = new P(v);
+			}
+		public Proprieta(string v)
+			{
+			_p = new P(v);
+			}
+		public Proprieta(DateTime v)
+			{
+			_p = new P(v);
+			}
 
 
-	//var options = new JsonReaderOptions
-	//{
-	//    AllowTrailingCommas = true,
-	//    CommentHandling = JsonCommentHandling.Skip
-	//};
-	//var reader = new Utf8JsonReader(jsonUtf8Bytes, options);
-
-	//while (reader.Read())
-	//{
-	//    Console.Write(reader.TokenType);
-
-	//    switch (reader.TokenType)
-	//    {
-	//        case JsonTokenType.PropertyName:
-	//        case JsonTokenType.String:
-	//            {
-	//                string? text = reader.GetString();
-	//                Console.Write(" ");
-	//                Console.Write(text);
-	//                break;
-	//            }
-
-	//        case JsonTokenType.Number:
-	//            {
-	//                int intValue = reader.GetInt32();
-	//                Console.Write(" ");
-	//                Console.Write(intValue);
-	//                break;
-	//            }
-
-	//            // Other token types elided for brevity
-	//    }
-	//    Console.WriteLine();
-	//}
-
+		public override string ToString()
+			{
+			StringBuilder sb = new StringBuilder();
+			try
+				{
+				sb.Append(this._p.ToString());
+				}
+			catch
+				{
+				MessageBox.Show($"Errore in ToString()");
+				}
+			return sb.ToString();
+			} 
+		}
 	}

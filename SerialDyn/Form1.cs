@@ -68,7 +68,10 @@ namespace SerialDyn
 				MessageBox.Show($"Errore nel caricamento del file: {ofd.FileName} !");
 				ChiudiDoc();
 				}
-			Aggiorna();
+			else
+				{
+				Aggiorna();
+				}
 			}
 
 		private void ChiudiDoc()
